@@ -29,4 +29,29 @@ router.post('/', async (req, res) => {
     }
 })
 
+
+// Get All Task
+
+router.get('/', async (req, res) => {
+    try {
+        const tasks = await Task.find();
+        res.status(201).json(tasks);
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+    
+});
+
+// Get Task By ClerkId
+
+router.get('/:userId', async (req, res) => {
+    try {
+        const tasks = await Task.find({ userId: req.params.userId })
+        res.status(201).json(tasks) 
+    } catch (error) {
+        res.status(500).json({message:error.message})
+    }
+    
+})
+
 module.exports = router
