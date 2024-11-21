@@ -88,5 +88,16 @@ router.put('/editTask/:id', async (req, res) => {
     }
 })
 
+// Delete Task
+router.delete('/deleteTask/:id', async (req, res) => {
+    try {
+        const taskRef = req.params.id
+        const taskRes = await Task.findByIdAndDelete(taskRef);
+        res.status(200).json(taskRes)
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 
 module.exports = router
