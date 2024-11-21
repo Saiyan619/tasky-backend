@@ -44,14 +44,43 @@ router.get('/', async (req, res) => {
 
 // Get Task By ClerkId
 
-router.get('/:userId', async (req, res) => {
+router.get('/user/:userId', async (req, res) => {
     try {
         const tasks = await Task.find({ userId: req.params.userId })
-        res.status(201).json(tasks) 
+        res.status(201).json(tasks)
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+    
+});
+
+// Get Single Task by MongoDbId
+
+router.get('/taskInfo/:id', async (req, res) => {
+    try {
+        const singleTask = await Task.findById(req.params.id); // Corrected syntax
+        res.status(200).json(singleTask); // Return the found task
+    } catch (error) {
+        res.status(500).json({ message: error.message }); // Handle errors
+    }
+});
+
+
+// Update Task details
+
+router.put('/editTask/:id', async (req, res) => {
+    try {
+        const { title, description, status, priority } = req.body;
+        const UpdatingTask = await Task.findByIdAndUpdate(
+            req.params.id, // the id to be updated "/:id"
+            { title, description, status, priority }, // the data to update from the chosen id
+            { new: true }  // returns the updated task after the update
+        )
+       res.status(200).json(UpdatingTask)
     } catch (error) {
         res.status(500).json({message:error.message})
     }
-    
 })
+
 
 module.exports = router

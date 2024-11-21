@@ -2,7 +2,7 @@ const { default: mongoose } = require("mongoose");
 
 
 const TaskSchema = new mongoose.Schema({
-    userId: { type: String, require: true, unique: true },
+    userId: { type: String, require: true },
     title: { type: String, require: true },
     description: { type: String, require: true },
     status: { type: String, default: 'pending', enum: ['pending', 'ongoing', 'completed', 'failed'] },
