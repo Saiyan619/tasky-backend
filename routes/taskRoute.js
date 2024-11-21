@@ -70,12 +70,18 @@ router.get('/taskInfo/:id', async (req, res) => {
 
 router.put('/editTask/:id', async (req, res) => {
     try {
+          // Log incoming request parameters and body
+          console.log("Request Params:", req.params);
+        console.log("Request Body:", req.body);
+        
         const { title, description, status, priority } = req.body;
         const UpdatingTask = await Task.findByIdAndUpdate(
             req.params.id, // the id to be updated "/:id"
             { title, description, status, priority }, // the data to update from the chosen id
             { new: true }  // returns the updated task after the update
         )
+        console.log("Updated Task:", UpdatingTask);
+
        res.status(200).json(UpdatingTask)
     } catch (error) {
         res.status(500).json({message:error.message})
