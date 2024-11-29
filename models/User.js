@@ -9,4 +9,4 @@ const UserSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },            // User's registration date
 })
 
-module.exports = mongoose.model('user', UserSchema);
+module.exports = mongoose.model('User', UserSchema);

@@ -13,7 +13,8 @@ const TaskSchema = new mongoose.Schema({
         default: "medium" 
     },
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    collaborators: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
 })
 
 module.exports = mongoose.model('task', TaskSchema);
