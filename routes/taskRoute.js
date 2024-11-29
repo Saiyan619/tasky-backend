@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Task = require('../models/Task')
-
+const User = require('../models/User')
 
 //Create Task
 
@@ -15,7 +15,8 @@ router.post('/', async (req, res) => {
             dueDate: req.body.dueDate,
             priority: req.body.priority || 'medium',
             createdAt: req.body.createdAt,
-            updatedAt: req.body.updatedAt
+            updatedAt: req.body.updatedAt,
+            collaborators: req.body.collaborators
         };
 
         const taskRef = await Task.create(data);
@@ -46,7 +47,7 @@ router.get('/', async (req, res) => {
 
 router.get('/user/:userId', async (req, res) => {
     try {
-        const tasks = await Task.find({ userId: req.params.userId })
+        const tasks = await Task.find({ userId: req.params.userId }).populate('collaborators', 'email name')
         res.status(201).json(tasks)
     } catch (error) {
         res.status(500).json({ message: error.message })
@@ -54,11 +55,11 @@ router.get('/user/:userId', async (req, res) => {
     
 });
 
-// Get Single Task by MongoDbId
+// Get Single Task by MongoDbId// 
 
 router.get('/taskInfo/:id', async (req, res) => {
     try {
-        const singleTask = await Task.findById(req.params.id); // Corrected syntax
+        const singleTask = await Task.findById(req.params.id).populate('collaborators', 'email name'); // Corrected syntax
         res.status(200).json(singleTask); // Return the found task
     } catch (error) {
         res.status(500).json({ message: error.message }); // Handle errors
@@ -74,10 +75,10 @@ router.put('/editTask/:id', async (req, res) => {
           console.log("Request Params:", req.params);
         console.log("Request Body:", req.body);
         
-        const { title, description, status, priority } = req.body;
+        const { title, description, status, priority , dueDate, collaborators} = req.body;
         const UpdatingTask = await Task.findByIdAndUpdate(
             req.params.id, // the id to be updated "/:id"
-            { title, description, status, priority }, // the data to update from the chosen id
+            { title, description, status, priority, dueDate, collaborators }, // the data to update from the chosen id
             { new: true }  // returns the updated task after the update
         )
         console.log("Updated Task:", UpdatingTask);

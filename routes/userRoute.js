@@ -12,7 +12,7 @@ router.post('/', async (req, res) => {
             clerkId: req.body.clerkId, // Clerk's unique ID for the user
             name: req.body.name,
             email: req.body.email,
-            role: req.body.role || 'user', // Optional role; defaults to 'user' if not provided
+            role: req.body.role || 'User', // Optional role; defaults to 'user' if not provided
             image: req.body.image
         }
         const userRef = await User.findOneAndUpdate(
