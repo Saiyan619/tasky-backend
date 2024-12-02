@@ -57,14 +57,22 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 
-// Get Single Task by MongoDbId// 
+// Get Single Task Details by MongoDbId// 
 
 router.get('/taskInfo/:id', async (req, res) => {
     try {
-        const singleTask = await Task.findById(req.params.id).populate('collaborators', 'name email')
+       
+        const singleTask = await Task.findById(req.params.id)
+          // Populate the collaborators manually by matching their clerkIds
+          const collaboratorDetails = await User.find({
+            clerkId: { $in: singleTask.collaborators }
+        }).select('name email clerkId'); // Select only the necessary fields
+
+        // Merge the task with the populated collaborators' details
+        const populatedTask = { ...singleTask.toObject(), collaborators: collaboratorDetails };
 
 
-        res.status(200).json(singleTask); // Return the found task
+        res.status(200).json(populatedTask); // Return the found task
     } catch (error) {
         res.status(500).json({ message: error.message }); // Handle errors
     }
@@ -93,6 +101,7 @@ router.put('/editTask/:id', async (req, res) => {
     }
 });
 
+
 // Delete Task///
 router.delete('/deleteTask/:id', async (req, res) => {
     try {
@@ -106,47 +115,36 @@ router.delete('/deleteTask/:id', async (req, res) => {
 
 
 // Get Shared Task
-// router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
-//     try {
-//                 // Query tasks where the collaborators array includes the provided user ID
-//         const tasks = await Task.find({ collaborators: mongoose.Types.ObjectId(userId) })
-//         .populate({
-//             path: 'collaborators', // Populate collaborators with User data
-//             select: 'name email'   // Retrieve specific fields from User schema
-//         });
-//         res.status(200).json(tasks);
-
-//     } catch (error) {
-//         res.status(500).json({ mesaage: error.message });
-//     }
-// })
-
-// router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
-//     try {
-//         // Use `new mongoose.Types.ObjectId()` to convert the userId to ObjectId
-//         const tasks = await Task.find({ collaborators:req.params.userId })
-//             .populate('collaborators', 'name email'); // Populate collaborators with name and email
-
-//         res.status(200).json(tasks);
-//     } catch (error) {
-//         res.status(500).json({ message: error.message });
-//     }
-// });
-
 
 router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
     try {
         console.log('Request Params:', req.params); // Debug log
         console.log('Clerk ID:', req.params.userId); // Debug log
+
+        // Find tasks where the user is a collaborator
         const tasks = await Task.find({ collaborators: req.params.userId });
+
         console.log('Matched Tasks:', tasks); // Debug log
-        res.status(200).json(tasks);
+
+        // Populate the collaborators field manually
+        const populatedTasks = await Promise.all(
+            tasks.map(async (task) => {
+                const collaboratorDetails = await User.find({
+                    clerkId: { $in: task.collaborators } // Match the clerkIds in the task's collaborators array
+                }).select('name email clerkId'); // Only select the necessary fields
+                return { ...task.toObject(), collaborators: collaboratorDetails };
+            })
+        );
+
+        console.log('Populated Tasks:', populatedTasks); // Debug log
+
+        res.status(200).json(populatedTasks);
     } catch (error) {
         console.error('Error:', error.message);
         res.status(500).json({ message: error.message });
     }
-
 });
+
 
 
 
