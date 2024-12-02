@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
     try {
                // Find tasks where userId matches
-               const tasks = await Task.find({ userId: req.params.userId }).populate('collaborators', 'name email'); // Populate collaborators with name and email fields   
+               const tasks = await Task.find({ userId: req.params.userId }) 
         res.status(201).json(tasks)
     } catch (error) {
         res.status(500).json({ message: error.message })
@@ -121,16 +121,31 @@ router.delete('/deleteTask/:id', async (req, res) => {
 //     }
 // })
 
+// router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
+//     try {
+//         // Use `new mongoose.Types.ObjectId()` to convert the userId to ObjectId
+//         const tasks = await Task.find({ collaborators:req.params.userId })
+//             .populate('collaborators', 'name email'); // Populate collaborators with name and email
+
+//         res.status(200).json(tasks);
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// });
+
+
 router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
     try {
-        // Use `new mongoose.Types.ObjectId()` to convert the userId to ObjectId
-        const tasks = await Task.find({ collaborators: new mongoose.Types.ObjectId(req.params.userId) })
-            .populate('collaborators', 'name email'); // Populate collaborators with name and email
-
+        console.log('Request Params:', req.params); // Debug log
+        console.log('Clerk ID:', req.params.userId); // Debug log
+        const tasks = await Task.find({ collaborators: req.params.userId });
+        console.log('Matched Tasks:', tasks); // Debug log
         res.status(200).json(tasks);
     } catch (error) {
+        console.error('Error:', error.message);
         res.status(500).json({ message: error.message });
     }
+
 });
 
 
