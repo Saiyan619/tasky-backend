@@ -1,5 +1,5 @@
 const express = require('express')
-const mongoose = require('mongoose'); // Import mongoose here
+const mongoose = require('mongoose'); 
 const router = express.Router()
 const Task = require('../models/Task')
 const User = require('../models/User')
@@ -21,6 +21,8 @@ router.post('/', async (req, res) => {
         };
 
         const taskRef = await Task.create(data);
+        console.log('Task before saving:', taskRef);
+
     
         const taskRes = taskRef.save();
         
@@ -57,20 +59,55 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 
-// Get Single Task Details by MongoDbId// 
+// Filter Tasks
+// Filter tasks based on criteria
+router.get('/filterTasks', async (req, res) => {
+    try {
+        const { userId, status, priority, search } = req.query;
 
+        const query = { userId }; // Always filter by the user's ID (Clerk ID)
+
+        // Add filters if specified
+        if (status) query.status = status;
+        if (priority) query.priority = priority;
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } }, // Case-insensitive search in title
+                { description: { $regex: search, $options: 'i' } } // Case-insensitive search in description
+            ];
+        }
+
+        // Fetch the filtered tasks
+        const tasks = await Task.find(query);
+
+        if (!tasks.length) {
+            return res.status(404).json({ message: "No tasks found matching the criteria" });
+        }
+
+        res.status(200).json(tasks);
+    } catch (error) {
+        console.error("Error filtering tasks:", error.message);
+        res.status(500).json({ message: "Failed to filter tasks" });
+    }
+});
+
+
+// Get Single Task Details by MongoDbId// 
 router.get('/taskInfo/:id', async (req, res) => {
     try {
-       
-        const singleTask = await Task.findById(req.params.id)
-          // Populate the collaborators manually by matching their clerkIds
-          const collaboratorDetails = await User.find({
-            clerkId: { $in: singleTask.collaborators }
+        const singleTask = await Task.findById(req.params.id);
+        console.log('Task collaborators:', singleTask.collaborators); // Check collaborators field
+
+        // Extract only the clerkIds from collaborators
+        const collaboratorIds = singleTask.collaborators.map((collab) => collab.clerkId);
+
+        // Fetch the users corresponding to those clerkIds
+        const collaboratorDetails = await User.find({
+            clerkId: { $in: collaboratorIds }
         }).select('name email clerkId'); // Select only the necessary fields
 
         // Merge the task with the populated collaborators' details
         const populatedTask = { ...singleTask.toObject(), collaborators: collaboratorDetails };
-
 
         res.status(200).json(populatedTask); // Return the found task
     } catch (error) {
@@ -79,25 +116,90 @@ router.get('/taskInfo/:id', async (req, res) => {
 });
 
 
-// Update Task details
 
+// Update Task details with RBAC
 router.put('/editTask/:id', async (req, res) => {
     try {
-        // Log incoming request parameters and body
-        console.log("Request Params:", req.params);
-        console.log("Request Body:", req.body);
-        
-        const { title, description, status, priority, dueDate, collaborators } = req.body;
-        const UpdatingTask = await Task.findByIdAndUpdate(
-            req.params.id, // the id to be updated "/:id"
-            { title, description, status, priority, dueDate, collaborators }, // the data to update from the chosen id
-            { new: true }  // returns the updated task after the update
-        )
-        console.log("Updated Task:", UpdatingTask);
+        console.log("Incoming Request Params:", req.params);
+        console.log("Incoming Request Body:", req.body);
 
-        res.status(200).json(UpdatingTask)
+        const { userId, title, description, status, priority, dueDate, collaborators } = req.body;
+        const taskId = req.params.id;
+
+        // Fetch the task
+        const task = await Task.findById(taskId);
+
+        if (!task) {
+            console.log("Task not found");
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+         // Check if the user is the creator
+        if (task.userId === userId) {
+            console.log("User is the creator of the task:", userId);
+        }
+        
+
+        // Check if the user is in the collaborators array
+        const collaborator = task.collaborators.find(c => c.clerkId === userId);
+
+        // if (!collaborator) {
+        //     console.log("User not a collaborator:", userId);
+        //     return res.status(403).json({ message: "You are not a collaborator on this task" });
+        // }
+
+        // Check if the role allows updates
+        if (task.userId === userId) {
+            console.log("User is the creator of the task:", userId);
+               // Prepare the updated data dynamically
+        const updatedData = {};
+        if (title) updatedData.title = title;
+        if (description) updatedData.description = description;
+        if (status) updatedData.status = status;
+        if (priority) updatedData.priority = priority;
+        if (dueDate) updatedData.dueDate = dueDate;
+        if (collaborators) updatedData.collaborators = collaborators;
+
+        // Perform the update
+        const updatedTask = await Task.findByIdAndUpdate(
+            taskId,
+            { $set: updatedData }, // Only update fields provided
+            { new: true }
+        );
+
+        console.log("Task successfully updated:", updatedTask);
+
+        res.status(200).json(updatedTask);
+        }
+        else if (collaborator.role !== 'owner' && collaborator.role !== 'collaborator') {
+            console.log("User lacks permissions:", userId, collaborator.role);
+            return res.status(403).json({ message: "You do not have permission to update this task" });
+        }
+
+           // Prepare the updated data dynamically
+           const updatedData = {};
+           if (title) updatedData.title = title;
+           if (description) updatedData.description = description;
+           if (status) updatedData.status = status;
+           if (priority) updatedData.priority = priority;
+           if (dueDate) updatedData.dueDate = dueDate;
+           if (collaborators) updatedData.collaborators = collaborators;
+   
+           // Perform the update
+           const updatedTask = await Task.findByIdAndUpdate(
+               taskId,
+               { $set: updatedData }, // Only update fields provided
+               { new: true }
+           );
+   
+           console.log("Task successfully updated:", updatedTask);
+   
+           res.status(200).json(updatedTask);
+
+
+     
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        res.status(500).json({ message: error.message });
     }
 });
 
@@ -113,16 +215,18 @@ router.delete('/deleteTask/:id', async (req, res) => {
     }
 });
 
-
 // Get Shared Task
-
 router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
     try {
+        const userId = req.params.userId;
+
         console.log('Request Params:', req.params); // Debug log
-        console.log('Clerk ID:', req.params.userId); // Debug log
+        console.log('Clerk ID:', userId); // Debug log
 
         // Find tasks where the user is a collaborator
-        const tasks = await Task.find({ collaborators: req.params.userId });
+        const tasks = await Task.find({
+            'collaborators.clerkId': userId // Match the clerkId inside the collaborators array
+        });
 
         console.log('Matched Tasks:', tasks); // Debug log
 
@@ -130,8 +234,9 @@ router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
         const populatedTasks = await Promise.all(
             tasks.map(async (task) => {
                 const collaboratorDetails = await User.find({
-                    clerkId: { $in: task.collaborators } // Match the clerkIds in the task's collaborators array
-                }).select('name email clerkId'); // Only select the necessary fields
+                    clerkId: { $in: task.collaborators.map((collab) => collab.clerkId) } // Match the clerkIds in the task's collaborators array
+                }).select('name email clerkId');
+                
                 return { ...task.toObject(), collaborators: collaboratorDetails };
             })
         );
@@ -144,7 +249,6 @@ router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
-
 
 
 

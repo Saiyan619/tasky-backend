@@ -14,7 +14,14 @@ const TaskSchema = new mongoose.Schema({
     },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
-    collaborators: [{ type: String, ref: "User" }]  // Now using clerkId (string) for collaborators
+    collaborators: [{
+        clerkId: { type: String}, // Clerk ID for the collaborator
+        role: {
+            type: String,
+            enum: ["owner", "collaborator", "viewer"],
+            default: "viewer",
+        }
+    }]  
 })
 
 module.exports = mongoose.model('task', TaskSchema);
