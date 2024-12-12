@@ -115,16 +115,13 @@ router.get('/taskInfo/:id', async (req, res) => {
     }
 });
 
-
-
-// Update Task details with RBAC
 router.put('/editTask/:id', async (req, res) => {
     try {
-        console.log("Incoming Request Params:", req.params);
-        console.log("Incoming Request Body:", req.body);
-
         const { userId, title, description, status, priority, dueDate, collaborators } = req.body;
         const taskId = req.params.id;
+
+        console.log("Incoming Request Params:", req.params);
+        console.log("Incoming Request Body:", req.body);
 
         // Fetch the task
         const task = await Task.findById(taskId);
@@ -134,72 +131,69 @@ router.put('/editTask/:id', async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
-         // Check if the user is the creator
+        // Check if the user is the creator
         if (task.userId === userId) {
             console.log("User is the creator of the task:", userId);
+
+            // Merge or replace collaborators
+            const updatedCollaborators = collaborators
+                ? [...new Map([...task.collaborators, ...collaborators].map(c => [c.clerkId, c])).values()] // Merge by `clerkId`
+                : task.collaborators;
+
+            console.log("Updated Collaborators:", updatedCollaborators);
+
+            // Prepare the updated data
+            const updatedData = {
+                title: title || task.title,
+                description: description || task.description,
+                status: status || task.status,
+                priority: priority || task.priority,
+                dueDate: dueDate || task.dueDate,
+                collaborators: updatedCollaborators,
+            };
+
+            const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: updatedData }, { new: true });
+            console.log("Task successfully updated:", updatedTask);
+            return res.status(200).json(updatedTask);
         }
-        
 
         // Check if the user is in the collaborators array
         const collaborator = task.collaborators.find(c => c.clerkId === userId);
 
-        // if (!collaborator) {
-        //     console.log("User not a collaborator:", userId);
-        //     return res.status(403).json({ message: "You are not a collaborator on this task" });
-        // }
+        if (!collaborator) {
+            console.log("User not a collaborator:", userId);
+            return res.status(403).json({ message: "You are not a collaborator on this task" });
+        }
 
         // Check if the role allows updates
-        if (task.userId === userId) {
-            console.log("User is the creator of the task:", userId);
-               // Prepare the updated data dynamically
-        const updatedData = {};
-        if (title) updatedData.title = title;
-        if (description) updatedData.description = description;
-        if (status) updatedData.status = status;
-        if (priority) updatedData.priority = priority;
-        if (dueDate) updatedData.dueDate = dueDate;
-        if (collaborators) updatedData.collaborators = collaborators;
-
-        // Perform the update
-        const updatedTask = await Task.findByIdAndUpdate(
-            taskId,
-            { $set: updatedData }, // Only update fields provided
-            { new: true }
-        );
-
-        console.log("Task successfully updated:", updatedTask);
-
-        res.status(200).json(updatedTask);
-        }
-        else if (collaborator.role !== 'owner' && collaborator.role !== 'collaborator') {
+        if (collaborator.role !== 'owner' && collaborator.role !== 'collaborator') {
             console.log("User lacks permissions:", userId, collaborator.role);
             return res.status(403).json({ message: "You do not have permission to update this task" });
         }
 
-           // Prepare the updated data dynamically
-           const updatedData = {};
-           if (title) updatedData.title = title;
-           if (description) updatedData.description = description;
-           if (status) updatedData.status = status;
-           if (priority) updatedData.priority = priority;
-           if (dueDate) updatedData.dueDate = dueDate;
-           if (collaborators) updatedData.collaborators = collaborators;
-   
-           // Perform the update
-           const updatedTask = await Task.findByIdAndUpdate(
-               taskId,
-               { $set: updatedData }, // Only update fields provided
-               { new: true }
-           );
-   
-           console.log("Task successfully updated:", updatedTask);
-   
-           res.status(200).json(updatedTask);
+        // Merge or replace collaborators
+        const updatedCollaborators = collaborators
+            ? [...new Map([...task.collaborators, ...collaborators].map(c => [c.clerkId, c])).values()] // Merge by `clerkId`
+            : task.collaborators;
 
+        console.log("Updated Collaborators:", updatedCollaborators);
 
-     
+        // Prepare the updated data
+        const updatedData = {
+            title: title || task.title,
+            description: description || task.description,
+            status: status || task.status,
+            priority: priority || task.priority,
+            dueDate: dueDate || task.dueDate,
+            collaborators: updatedCollaborators,
+        };
+
+        const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: updatedData }, { new: true });
+        console.log("Task successfully updated:", updatedTask);
+        return res.status(200).json(updatedTask);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("Error during task update:", error.message);
+        return res.status(500).json({ message: error.message });
     }
 });
 
