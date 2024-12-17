@@ -3,35 +3,35 @@ const mongoose = require('mongoose');
 const router = express.Router()
 const Task = require('../models/Task')
 const User = require('../models/User')
+const GlobalActivityLogs= require('../models/GlobalActivityLogs')
 
 //Create Task
 
 router.post('/', async (req, res) => {
     try {
-        const data = {
-            userId: req.body.userId,
-            title: req.body.title,
-            description: req.body.description,
-            status: req.body.status || 'pending',
-            dueDate: req.body.dueDate,
-            priority: req.body.priority || 'medium',
-            createdAt: req.body.createdAt,
-            updatedAt: req.body.updatedAt,
-            collaborators: req.body.collaborators
+        const { userId, title, description, status, dueDate, priority, createdAt, collaborators } = req.body;
+
+        // Create task data
+        const taskData = {
+            userId,
+            title,
+            description,
+            status: status || 'pending',
+            dueDate,
+            priority: priority || 'medium',
+            createdAt: createdAt || Date.now(),
+            collaborators
         };
 
-        const taskRef = await Task.create(data);
-        console.log('Task before saving:', taskRef);
+        // Save the task
+        const task = await Task.create(taskData);
 
-    
-        const taskRes = taskRef.save();
-        
-        res.status(201).json(taskRes);
-        
+        // Send the saved task as the response
+        res.status(201).json(task);
     } catch (error) {
-        res.status(500).json({ message: error.message }); 
+        res.status(500).json({ message: error.message });
     }
-})
+});
 
 
 // Get All Task
@@ -152,6 +152,27 @@ router.put('/editTask/:id', async (req, res) => {
                 collaborators: updatedCollaborators,
             };
 
+             // Add activity log
+    task.activityLogs.push({
+        action: `Updated`,
+        userId,
+        timestamp:Date.now()
+    });
+            
+            
+                // Add to global activity logs
+                await GlobalActivityLogs.create({
+                    taskId: taskId,
+                    action: "Updated",
+                    userId: req.body.userId, // Clerk ID of the user making the update
+                    timestamp: Date.now(), // Optional: ISO timestamp
+                    // details: updates, // Optional: Include details of the update
+                });
+            
+            
+  
+            await task.save();
+            
             const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: updatedData }, { new: true });
             console.log("Task successfully updated:", updatedTask);
             return res.status(200).json(updatedTask);
@@ -201,8 +222,22 @@ router.put('/editTask/:id', async (req, res) => {
 // Delete Task///
 router.delete('/deleteTask/:id', async (req, res) => {
     try {
-        const taskRef = req.params.id
-        const taskRes = await Task.findByIdAndDelete(taskRef);
+        const taskId = req.params.id
+        const userId = req.query.userId; // Extract userId from the query string
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required." });
+        }
+        const taskRes = await Task.findByIdAndDelete(taskId);
+
+           // Add to global activity logs
+           await GlobalActivityLogs.create({
+            taskId: taskId,
+            action: "Deleted",
+            userId: userId, // Clerk ID of the user making the delete action
+            timestamp: Date.now()
+           });
+        
         res.status(200).json(taskRes)
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -243,6 +278,54 @@ router.get('/collaborate/shared-tasks/:userId', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
+// Adding activity Logs
+router.post('/activityLog/:id', async (req, res) => {
+    try {
+      
+        const { id } = req.params;
+        const { userId, action } = req.body;
+
+        const task = await Task.findById(id);
+
+        if (!task){res.status(404).json({message:"task not found"})}
+
+        // Add new Log
+        const activity = {
+            action: "Task Created",
+            userId,
+        };
+        task.activityLogs.push(activity);
+        await task.save();
+
+        await GlobalActivityLogs.create({
+            taskId: task._id,
+            ...activity
+        })
+
+        res.status(200).json({ message: "Activity log added", activityLogs: task.activityLogs })
+
+
+    } catch (error) {
+        res.status(500).json({message:error.message})
+    }
+})
+
+// Getting Activity Logs    
+
+router.get("/global-logs", async (req, res) => {
+    try {
+        
+        const Logs = await GlobalActivityLogs.find().populate('taskId', 'action')
+
+        if (!Logs) { res.status(404).json({ message: "task not found" }) }
+        res.status(200).json(Logs)
+
+    } catch (error) {
+        res.status(500).json({message:error.message})
+    }
+})
+
 
 
 
