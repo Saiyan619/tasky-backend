@@ -21,7 +21,14 @@ const TaskSchema = new mongoose.Schema({
             enum: ["owner", "collaborator", "viewer"],
             default: "viewer",
         }
-    }]
+    }],
+    activityLogs: [
+        {
+          action: { type: String, required: true }, // Description of the action
+          userId: { type: String, required: true }, // Clerk ID of the user
+          timestamp: { type: Date, default: Date.now }, // Time of the action
+        },
+      ]
 })
 
 module.exports = mongoose.model('task', TaskSchema);
