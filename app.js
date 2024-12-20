@@ -33,6 +33,9 @@ app.use('/user', userRoute, cors());
 const taskRoute = require('./routes/taskRoute')
 app.use('/task', taskRoute, cors());
 
+const activityRoute = require('./routes/activityRoute')
+app.use('/logs', activityRoute, cors())
+
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
