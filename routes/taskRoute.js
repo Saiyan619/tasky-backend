@@ -115,6 +115,8 @@ router.get('/taskInfo/:id', async (req, res) => {
     }
 });
 
+
+// Update Task
 router.put('/editTask/:id', async (req, res) => {
     try {
         const { userId, title, description, status, priority, dueDate, collaborators } = req.body;
@@ -153,21 +155,21 @@ router.put('/editTask/:id', async (req, res) => {
             };
 
              // Add activity log
-    task.activityLogs.push({
-        action: `Updated`,
-        userId,
-        timestamp:Date.now()
-    });
+    // task.activityLogs.push({
+    //     action: `Updated`,
+    //     userId,
+    //     timestamp:Date.now()
+    // });
             
             
                 // Add to global activity logs
-                await GlobalActivityLogs.create({
-                    taskId: taskId,
-                    action: "Updated",
-                    userId: req.body.userId, // Clerk ID of the user making the update
-                    timestamp: Date.now(), // Optional: ISO timestamp
-                    // details: updates, // Optional: Include details of the update
-                });
+                // await GlobalActivityLogs.create({
+                //     taskId: taskId,
+                //     action: "Updated",
+                //     userId: req.body.userId, // Clerk ID of the user making the update
+                //     timestamp: Date.now(), // Optional: ISO timestamp
+                //     // details: updates, // Optional: Include details of the update
+                // });
             
             
   
@@ -230,13 +232,13 @@ router.delete('/deleteTask/:id', async (req, res) => {
         }
         const taskRes = await Task.findByIdAndDelete(taskId);
 
-           // Add to global activity logs
-           await GlobalActivityLogs.create({
-            taskId: taskId,
-            action: "Deleted",
-            userId: userId, // Clerk ID of the user making the delete action
-            timestamp: Date.now()
-           });
+        //    // Add to global activity logs
+        //    await GlobalActivityLogs.create({
+        //     taskId: taskId,
+        //     action: "Deleted",
+        //     userId: userId, // Clerk ID of the user making the delete action
+        //     timestamp: Date.now()
+        //    });
         
         res.status(200).json(taskRes)
     } catch (error) {
@@ -284,7 +286,7 @@ router.post('/activityLog/:id', async (req, res) => {
     try {
       
         const { id } = req.params;
-        const { userId, action } = req.body;
+        const { userId } = req.body;
 
         const task = await Task.findById(id);
 
