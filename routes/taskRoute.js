@@ -106,8 +106,26 @@ router.get('/taskInfo/:id', async (req, res) => {
             clerkId: { $in: collaboratorIds }
         }).select('name email clerkId'); // Select only the necessary fields
 
+
+                // Populate activity logs with user emails
+        const populatedActivityLogs = await Promise.all(
+            singleTask.activityLogs.map(async (log) => {
+                const user = await User.findOne({ clerkId: log.userId }).select('email');
+                return {
+                    action: log.action,
+                    timestamp: log.timestamp,
+                    userId: log.userId,
+                    userEmail: user ? user.email : null, // Attach user email
+                };
+            })
+        );
+
         // Merge the task with the populated collaborators' details
-        const populatedTask = { ...singleTask.toObject(), collaborators: collaboratorDetails };
+        const populatedTask = {
+            ...singleTask.toObject(),
+            collaborators: collaboratorDetails,
+            activityLogs: populatedActivityLogs 
+        };
 
         res.status(200).json(populatedTask); // Return the found task
     } catch (error) {
