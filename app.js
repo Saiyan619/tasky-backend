@@ -3,7 +3,7 @@ require('dotenv').config()
 const { default: mongoose } = require('mongoose');
 var cors = require('cors')
 const app = express();
-const port = 8000; // Define your desired port
+const PORT = process.env.PORT || 8000;
 
 
 // Middleware to parse JSON requests
@@ -38,5 +38,5 @@ app.use('/logs', activityRoute, cors())
 
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+    console.log(`Server running on port ${Port}`);
 });
