@@ -38,5 +38,5 @@ app.use('/logs', activityRoute, cors())
 
 
 app.listen(port, () => {
-    console.log(`Server running on port ${Port}`);
+    console.log(`Server running on port ${PORT}`);
 });
