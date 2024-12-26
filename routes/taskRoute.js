@@ -127,6 +127,10 @@ router.get('/taskInfo/:id', async (req, res) => {
             activityLogs: populatedActivityLogs 
         };
 
+        if (!populatedTask) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
         res.status(200).json(populatedTask); // Return the found task
     } catch (error) {
         res.status(500).json({ message: error.message }); // Handle errors
