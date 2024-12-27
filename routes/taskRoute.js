@@ -351,6 +351,25 @@ router.get("/global-logs", async (req, res) => {
 })
 
 
+// Add Statistics
+
+router.get("/statistics/:userId", async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const statistics = {
+            allTask: await Task.countDocuments({ userId }),
+            pending: await Task.countDocuments({ userId, status: 'pending' }),
+            ongoing: await Task.countDocuments({ userId, status: 'ongoing' }),
+            completed: await Task.countDocuments({ userId , status: 'completed'}),
+        }
+
+        res.status(200).json(statistics)
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+})
+
 
 
 module.exports = router
