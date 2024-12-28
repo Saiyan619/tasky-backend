@@ -5,22 +5,20 @@ const User = require('../models/User');
 
 // Create A New User
 
-router.post('/', async (req, res) => {
+router.post('/createUser', async (req, res) => {
     try {
              // Set up data with Clerk ID as the unique identifier
         const data = {
             clerkId: req.body.clerkId, // Clerk's unique ID for the user
             name: req.body.name,
             email: req.body.email,
-            role: req.body.role || 'User', // Optional role; defaults to 'user' if not provided
-            image: req.body.image
         }
-        const userRef = await User.findOneAndUpdate(
+        const userRes = await User.findOneAndUpdate(
             { clerkId: data.clerkId },
             data,
             { new: true, upsert: true, runValidators: true });
     
-        const userRes = userRef.save()
+        // const userRes = userRef.save()
         
         res.status(201).json(userRes);
 
@@ -41,7 +39,8 @@ router.get('/', async (req, res) => {
 });
 
 
-//Get Users by ClerkId
+//Get User by ClerkId (till date i still don't know why i need this route but imma keep just incase )
+
 router.get('/:clerkId', async (req, res) => {
     const clerkIdDataRef = req.params.clerkId;
     try {
