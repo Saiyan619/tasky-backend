@@ -36,6 +36,10 @@ app.use('/task', taskRoute, cors());
 const activityRoute = require('./routes/activityRoute')
 app.use('/logs', activityRoute, cors())
 
+//Ai task generation route
+const aiTaskRoute = require('./routes/aiTaskRoute')
+app.use('/ai', aiTaskRoute, cors())
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
