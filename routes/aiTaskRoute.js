@@ -14,6 +14,7 @@ router.post('/generate', async (req, res) => {
     console.log('Received request body:', req.body);
     const interests = req.body.interests;
     const userId = req.body.userId;
+    const duration = req.body.duration;
    
 
     console.log('Request received:', req.body);
@@ -29,7 +30,7 @@ router.post('/generate', async (req, res) => {
         console.log('Interest list:', interestList); 
         
         const prompt = `Generate 5 specific and practical daily tasks for someone interested in ${interestList}. 
-        Think deeply and make tasks actionable, specific, and achievable within a year of an average student that will help the person progress in life.
+        Think deeply and make tasks actionable, specific, and achievable within ${duration} of an average student that will help the person progress in life.
         Format each task in a new line.
         Make sure to give it a title,description and timetable for tasks
         Each task should directly relate to one of the selected interests.
@@ -51,6 +52,7 @@ router.post('/generate', async (req, res) => {
             userId : req.body.userId,
             interests: req.body.interests,
             task: response.text(),
+            duration:req.body.duration,
             createdAt:Date.now()
         }
 
