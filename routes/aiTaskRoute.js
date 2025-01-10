@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const AiTask = require('../models/AITask');
 const AITask = require('../models/AITask');
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -12,7 +11,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 
 router.post('/generate', async (req, res) => {
-    console.log('Received request body:', req.body);  // Add this line
+    console.log('Received request body:', req.body);
     const interests = req.body.interests;
     const userId = req.body.userId;
    
@@ -26,9 +25,8 @@ router.post('/generate', async (req, res) => {
     console.log('Request received:', req.body);
     
     try {
-<<<<<<< HEAD
         const interestList = Array.from(interests).join(', ');
-        console.log('Interest list:', interestList);  // Add this line
+        console.log('Interest list:', interestList); 
         
         const prompt = `Generate 5 specific and practical daily tasks for someone interested in ${interestList}. 
         Think deeply and make tasks actionable, specific, and achievable within a year of an average student that will help the person progress in life.
@@ -39,14 +37,10 @@ router.post('/generate', async (req, res) => {
         `;        
         
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-=======
-        const prompt = "recommend tasks for me to do today my interest are food, sports, education give me todos with very short title, description and timeframe to do it"; // Dummy prompt for now
         
         
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
         
         
->>>>>>> 47612f64ce9b145c8070c34c7702e3f777059141
         const result = await model.generateContent(prompt);
         const response = await result.response;
         
@@ -77,17 +71,5 @@ router.post('/generate', async (req, res) => {
     }
 });
 
-<<<<<<< HEAD
-// router.post('/suggestedTasks', async (req, res) => {
-//     try {
-        
-//     } catch (error) {
-//         res.status(500).json({message:error.message})
-//     }
-// })
 
 module.exports = router;
-
-=======
-module.exports = router;
->>>>>>> 47612f64ce9b145c8070c34c7702e3f777059141
