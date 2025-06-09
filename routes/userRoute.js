@@ -18,7 +18,6 @@ router.post('/createUser', async (req, res) => {
             data,
             { new: true, upsert: true, runValidators: true });
     
-        // const userRes = userRef.save()
         
         res.status(201).json(userRes);
 

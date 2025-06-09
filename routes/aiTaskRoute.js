@@ -37,7 +37,7 @@ router.post('/generate', async (req, res) => {
         Tasks should be different each time and personalized to the interests.
         `;        
         
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
         
         
         
